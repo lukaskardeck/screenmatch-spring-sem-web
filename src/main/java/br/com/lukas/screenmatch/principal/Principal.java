@@ -1,28 +1,32 @@
 package br.com.lukas.screenmatch.principal;
 
+import br.com.lukas.screenmatch.model.Episode;
+import br.com.lukas.screenmatch.model.EpisodeData;
 import br.com.lukas.screenmatch.model.SeasonData;
 import br.com.lukas.screenmatch.model.SerieData;
 import br.com.lukas.screenmatch.service.APIConsumer;
 import br.com.lukas.screenmatch.service.DataConvert;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Scanner;
+import java.util.stream.Collectors;
 
 import static br.com.lukas.screenmatch.utils.FormatUtils.toParamURL;
 
 public class Principal {
-    private APIConsumer apiConsumer = new APIConsumer();
-    private DataConvert dataConvert = new DataConvert();
+    private final APIConsumer apiConsumer = new APIConsumer();
+    private final DataConvert dataConvert = new DataConvert();
 
     private final String URL = "https://www.omdbapi.com/?";
     private final String API_KEY = "apikey=a5200b91";
 
+    private static final Scanner scanner = new Scanner(System.in);
+
     public void showMenu() {
         System.out.print("Informe o título da série: ");
-        Scanner scanner = new Scanner(System.in);
         var serieTitle = scanner.nextLine();
-        scanner.close();
 
         var urlReq = URL + "t=" + toParamURL(serieTitle) + "&" + API_KEY;
         var json = apiConsumer.getData(urlReq);
@@ -38,8 +42,25 @@ public class Principal {
             seasons.add(seasonData);
         }
 
-        seasons.forEach(season -> season.episodes().forEach(episodio -> System.out.println(episodio.title())));
+//        seasons.forEach(season -> season.episodes().forEach(episodio -> System.out.println(episodio.title())));
 
+        var episodeDatas = seasons.stream()
+                .flatMap(s -> s.episodes().stream())
+                .collect(Collectors.toList());
+
+        episodeDatas.stream()
+                .filter(ep -> !ep.rating().equalsIgnoreCase("N/A"))
+                .sorted(Comparator.comparing(EpisodeData::rating).reversed())
+                .limit(5)
+                .forEach(System.out::println);
+
+
+        List<Episode> episodes = seasons.stream()
+                .flatMap( season -> season.episodes().stream()
+                        .map(epData -> new Episode(season.season(), epData))
+                ).collect(Collectors.toList());
+
+        episodes.forEach(System.out::println);
     }
 
 }
