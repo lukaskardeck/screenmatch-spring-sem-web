@@ -7,6 +7,8 @@ import br.com.lukas.screenmatch.model.SerieData;
 import br.com.lukas.screenmatch.service.APIConsumer;
 import br.com.lukas.screenmatch.service.DataConvert;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -48,6 +50,7 @@ public class Principal {
                 .flatMap(s -> s.episodes().stream())
                 .collect(Collectors.toList());
 
+        System.out.println("\n5 episódios mais bem avaliados! ↓↓↓");
         episodeDatas.stream()
                 .filter(ep -> !ep.rating().equalsIgnoreCase("N/A"))
                 .sorted(Comparator.comparing(EpisodeData::rating).reversed())
@@ -55,12 +58,28 @@ public class Principal {
                 .forEach(System.out::println);
 
 
+        System.out.println("\nTodos os episodios da série! ↓↓↓");
         List<Episode> episodes = seasons.stream()
                 .flatMap( season -> season.episodes().stream()
                         .map(epData -> new Episode(season.season(), epData))
                 ).collect(Collectors.toList());
-
         episodes.forEach(System.out::println);
+
+        System.out.println("\nA partir de qual ano você deseja ver os episodios");
+        var searchYear = scanner.nextInt();
+        scanner.nextLine();
+
+        LocalDate startDate = LocalDate.of(searchYear, 1, 1);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+        System.out.println("\nEpisodios a partir de: " + startDate.format(formatter));
+        episodes.stream()
+                .filter(e -> e.getDateOfRelease() != null && e.getDateOfRelease().isAfter(startDate))
+                .forEach(e -> System.out.println(
+                        "Temporada: " + e.getSeason() +
+                        " Episodio: " + e.getNumber() +
+                        " Data de Lançamento: " + e.getDateOfRelease().format(formatter)
+                ));
     }
 
 }
